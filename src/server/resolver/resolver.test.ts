@@ -80,3 +80,20 @@ test("cart intent is idempotent and rejects tampered revisions", () => {
 test("configuration rejects a stale displayed price", () => {
   assert.throws(() => createConfiguration(DEFAULT_SELECTION, { catalogVersion: CATALOG_VERSION, merchandiseSubtotalMinor: 1 }), /price changed/i);
 });
+
+test("conflict proposals are minimal: no proposal adds changes on top of another", () => {
+  const s: Selection = { ...DEFAULT_SELECTION, trimId: "gold" };
+  const props = req(s, { facet: "surfaceId", value: "metal_pearl" }).resolution.proposedChanges;
+  assert.ok(props.length >= 1);
+  const facets = props.map((p) => new Set(p.changes.map((c) => c.facet)));
+  for (const a of facets) for (const b of facets) {
+    if (a !== b && a.size < b.size) assert.ok(![...a].every((f) => b.has(f)), "superset proposal offered");
+  }
+});
+
+test("an unmet MOQ does not mark otherwise valid artwork as rejected", () => {
+  const s: Selection = { ...DEFAULT_SELECTION, surfaceId: "black_lacquer", identity: { type: "logo", zoneId: "barrel", fileName: "logo.png", fileType: "image/png", fileBytes: 1000, widthMm: 20, acknowledgedPreview: true }, quantity: 1 };
+  const r = req(s).resolution;
+  assert.ok(r.reasons.some((x) => x.field === "quantity"));
+  assert.equal(r.artwork, "proof_pending");
+});

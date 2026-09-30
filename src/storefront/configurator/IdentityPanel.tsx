@@ -50,7 +50,7 @@ export default function IdentityPanel({ identity, zones, fonts, reasons, padPrin
       <p className="lede">Make it yours, or leave it clean. Personalisation is optional and never required to buy.</p>
       <div className="segmented" role="radiogroup" aria-label="Personalisation type">
         {(["none", "text", "logo"] as const).map((t) => (
-          <button key={t} type="button" role="radio" aria-checked={identity.type === t} aria-pressed={identity.type === t} onClick={() => choose(t)} disabled={t === "logo" && !logoUploads}>
+          <button key={t} type="button" role="radio" aria-checked={identity.type === t} onClick={() => choose(t)} disabled={t === "logo" && !logoUploads}>
             {t === "none" ? "None" : t === "text" ? "Engraved text" : "Logo"}
           </button>
         ))}

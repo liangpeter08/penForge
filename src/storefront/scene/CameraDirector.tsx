@@ -33,7 +33,7 @@ export function shotFor(chapter: ChapterId, manifest: AssetManifest, identityZon
     case "details":
       return { azimuth: 0.35, polar: 1.05, distance: 1, focus: 0.82, fit: 0.42, roll: 0, durationMs: 550 };
     case "identity":
-      return { azimuth: THREE.MathUtils.degToRad(zone.angleDeg) + 0.02, polar: Math.PI / 2, distance: 1, focus: zone.axialFraction, fit: 0.34, roll: 0, durationMs: 500 };
+      return { azimuth: THREE.MathUtils.degToRad(zone.angleDeg) + 0.02, polar: Math.PI / 2, distance: 1, focus: zone.axialFraction, fit: 0.5, roll: 0, durationMs: 500 };
     case "review":
     default:
       return { azimuth: THREE.MathUtils.degToRad(zone.angleDeg) + 0.4, polar: 1.3, distance: 1, focus: 0.5, fit: 1.08, roll: 0, durationMs: 550 };
@@ -48,12 +48,14 @@ interface Props {
   controls: React.RefObject<OrbitControlsImpl | null>;
   /** Increments to force a re-frame (Reset view). */
   resetKey: number;
+  /** Rotation about Z applied to the pen group; targets are expressed in the pen's frame and rotated to match. */
+  tilt: number;
   onSettled?: () => void;
 }
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-export default function CameraDirector({ chapter, manifest, identityZone, reducedMotion, controls, resetKey, onSettled }: Props) {
+export default function CameraDirector({ chapter, manifest, identityZone, reducedMotion, controls, resetKey, tilt, onSettled }: Props) {
   const { camera, size, invalidate } = useThree();
   const anim = useRef<{ fromPos: THREE.Vector3; fromTarget: THREE.Vector3; toPos: THREE.Vector3; toTarget: THREE.Vector3; start: number; duration: number } | null>(null);
   const userOrbited = useRef(false);
@@ -74,7 +76,7 @@ export default function CameraDirector({ chapter, manifest, identityZone, reduce
     userOrbited.current = false;
     const shot = shotFor(chapter, manifest, identityZone, !entered.current);
     const L = manifest.silhouette.lengthMm * 0.001;
-    const target = new THREE.Vector3(0, -L / 2 + shot.focus * L, 0);
+    const target = new THREE.Vector3(0, -L / 2 + shot.focus * L, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), tilt);
     // Fit: vertical FOV must contain `fit * L` with a margin; account for aspect on narrow stages.
     const persp = camera as THREE.PerspectiveCamera;
     const vFov = THREE.MathUtils.degToRad(persp.fov);
@@ -107,7 +109,7 @@ export default function CameraDirector({ chapter, manifest, identityZone, reduce
     }
     anim.current = { fromPos: camera.position.clone(), fromTarget, toPos: pos, toTarget: target, start: performance.now(), duration: shot.durationMs };
     invalidate();
-  }, [chapter, manifest, identityZone, reducedMotion, resetKey, camera, size.width, size.height, controls, invalidate, onSettled]);
+  }, [chapter, manifest, identityZone, reducedMotion, resetKey, tilt, camera, size.width, size.height, controls, invalidate, onSettled]);
 
   useFrame(() => {
     const a = anim.current;

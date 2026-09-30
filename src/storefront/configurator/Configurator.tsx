@@ -88,7 +88,6 @@ export default function Configurator({ bootstrap }: { bootstrap: BootstrapRespon
     [d, state.sound],
   );
 
-  const identityZone = shown.selection.identity.type === "none" ? null : shown.selection.identity.zoneId;
   const fontCss = bootstrap.fonts.find((f) => f.id === (shown.selection.identity.type === "text" ? shown.selection.identity.fontId : ""))?.css ?? bootstrap.fonts[0].css;
   const pricing = res.pricing;
   const priceText = pricing.status === "exact" ? formatMinor(pricing.merchandiseSubtotalMinor, pricing.currency) : pricing.status === "unavailable" ? "Unavailable" : `${formatMinor(pricing.merchandiseSubtotalMinor, pricing.currency)} est.`;

@@ -57,6 +57,7 @@ export default function PenScene({ manifest, identity, fontCss, chapter, reduced
   const controls = useRef<OrbitControlsImpl | null>(null);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const L = manifest.silhouette.lengthMm * 0.001;
+  const tilt = isMobile ? -0.35 : -1.05;
 
   const handleReady = useCallback(() => {
     setReady(true);
@@ -65,6 +66,8 @@ export default function PenScene({ manifest, identity, fontCss, chapter, reduced
 
   return (
     <div className={`stage ${focused ? "stage--focused" : ""}`} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}>
+      {/* SVG poster from our own API: next/image optimisation adds nothing for vector art. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       {!ready && <img className="stage__poster" src={poster} alt="" aria-hidden="true" />}
       <SceneBoundary onFail={onFail}>
         <Canvas
@@ -94,7 +97,7 @@ export default function PenScene({ manifest, identity, fontCss, chapter, reduced
               <Lightformer intensity={0.4} position={[2, 0, -2]} scale={[2, 2, 1]} form="ring" />
             </Environment>
             {/* Pen presented diagonally (tip lower-left) so the silhouette reads on wide and narrow stages. */}
-            <group rotation={[0, 0, isMobile ? -0.35 : -1.05]}>
+            <group rotation={[0, 0, tilt]}>
               <PenModel manifest={manifest} identity={identity} fontCss={fontCss} mobile={isMobile} />
             </group>
             <ContactShadows position={[0, -L * 0.42, 0]} opacity={0.4} scale={L * 2.2} blur={2.2} far={L} resolution={isMobile ? 256 : 512} frames={1} />
@@ -108,7 +111,7 @@ export default function PenScene({ manifest, identity, fontCss, chapter, reduced
               maxPolarAngle={Math.PI - 0.35}
               makeDefault
             />
-            <CameraDirector chapter={chapter} manifest={manifest} identityZone={identity.type === "none" ? null : identity.zoneId} reducedMotion={reducedMotion} controls={controls} resetKey={resetKey} />
+            <CameraDirector chapter={chapter} manifest={manifest} identityZone={identity.type === "none" ? null : identity.zoneId} reducedMotion={reducedMotion} controls={controls} resetKey={resetKey} tilt={tilt} />
           </Suspense>
         </Canvas>
       </SceneBoundary>

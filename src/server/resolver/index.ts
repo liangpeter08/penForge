@@ -153,12 +153,16 @@ function proposalsFor(committed: Selection, requested: Selection, edit: Edit): P
     .sort((a, b) => a.weight - b.weight || a.o.baseUnitMinor - b.o.baseUnitMinor);
 
   const seen = new Set<string>();
+  const kept: (keyof Selection)[][] = [];
   const proposals: Proposal[] = [];
-  for (const { o } of scored) {
+  for (const { o, diff } of scored) {
     if (proposals.length >= 3) break;
     const key = `${o.surfaceId}|${o.trimId}|${o.modeId}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    // Not minimal: an earlier proposal already resolves the conflict with a subset of these changes.
+    if (kept.some((k) => k.length < diff.length && k.every((f) => diff.includes(f)))) continue;
+    kept.push(diff);
     const target: Selection = { ...requested, bodyFamilyId: o.bodyFamilyId, surfaceId: o.surfaceId, trimId: o.trimId, modeId: o.modeId };
     const { selection: normalized, changes: depChanges } = normalizeDependents(target, o);
     const changes: ProposedChange[] = [];
@@ -333,8 +337,10 @@ function resolutionFor(s: Selection, o: Offering, extra: { reasons?: Reason[]; p
   const ink = INKS.find((i) => i.id === s.inkId);
   const packaging = PACKAGING.find((p) => p.id === s.packagingId);
 
+  // Quantity rules are a commercial fact, not an artwork fact; keep the readiness states separate.
+  const artworkReasons = identityReasons.filter((r) => r.field !== "quantity");
   const artwork: Resolution["artwork"] =
-    s.identity.type === "none" ? "not_required" : identityReasons.length ? "rejected" : s.identity.type === "text" ? "preflight_passed" : "proof_pending";
+    s.identity.type === "none" ? "not_required" : artworkReasons.length ? "rejected" : s.identity.type === "text" ? "preflight_passed" : "proof_pending";
 
   const route: Resolution["commerce"]["route"] = s.identity.type === "logo" ? "quote" : "variant_cart";
   const blocking = reasons.filter((r) => r.code !== REASON.QUOTE_REQUIRED);

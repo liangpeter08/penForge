@@ -43,17 +43,20 @@ function chiselTexture(a: string, b: string): THREE.CanvasTexture {
 }
 
 function engravingTexture(text: string, fontCss: string, widthMm: number, heightMm: number, textHeightMm: number, light: boolean): THREE.CanvasTexture {
+  // Canvas u runs around the barrel (zone height), v runs along the axis (zone width). Text reads tip -> rear.
   const scale = 20; // px per mm
   const c = document.createElement("canvas");
-  c.width = Math.ceil(widthMm * scale);
-  c.height = Math.ceil(heightMm * scale);
+  c.width = Math.ceil(heightMm * scale);
+  c.height = Math.ceil(widthMm * scale);
   const ctx = c.getContext("2d")!;
   ctx.clearRect(0, 0, c.width, c.height);
+  ctx.translate(c.width / 2, c.height / 2);
+  ctx.rotate(-Math.PI / 2);
   ctx.font = `${textHeightMm * scale}px ${fontCss}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = light ? "rgba(40,40,40,0.9)" : "rgba(235,235,235,0.9)";
-  ctx.fillText(text, c.width / 2, c.height / 2);
+  ctx.fillText(text, 0, 0);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
@@ -201,15 +204,15 @@ export default function PenModel({ manifest, identity, fontCss = "sans-serif", m
           rotation={[0, THREE.MathUtils.degToRad(engraving.zone.angleDeg), 0]}
         >
           <cylinderGeometry
-            args={[rb * 1.004, rb * 1.004, engraving.zone.heightMm * MM, seg, 1, true, Math.PI / 2 - (engraving.zone.widthMm * MM) / (2 * rb), (engraving.zone.widthMm * MM) / rb]}
+            args={[rb * 1.004, rb * 1.004, engraving.zone.widthMm * MM, seg, 1, true, -(engraving.zone.heightMm * MM) / (2 * rb), (engraving.zone.heightMm * MM) / rb]}
           />
           <meshStandardMaterial map={engraving.tex} transparent roughness={0.9} metalness={0} polygonOffset polygonOffsetFactor={-2} side={THREE.DoubleSide} />
         </mesh>
       )}
       {/* Logo placeholder: shows the physical footprint, never a fake approved print */}
       {logoZone && identity.type === "logo" && (
-        <mesh name="logo-zone" position={[0, y0 + logoZone.axialFraction * L, 0]}>
-          <cylinderGeometry args={[rb * 1.004, rb * 1.004, Math.min(logoZone.heightMm, identity.widthMm * 0.4) * MM, seg, 1, true, Math.PI / 2 - (identity.widthMm * MM) / (2 * rb), (identity.widthMm * MM) / rb]} />
+        <mesh name="logo-zone" position={[0, y0 + logoZone.axialFraction * L, 0]} rotation={[0, THREE.MathUtils.degToRad(logoZone.angleDeg), 0]}>
+          <cylinderGeometry args={[rb * 1.004, rb * 1.004, identity.widthMm * MM, seg, 1, true, -(logoZone.heightMm * MM) / (2 * rb), (logoZone.heightMm * MM) / rb]} />
           <meshBasicMaterial color="#ffffff" transparent opacity={0.35} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-2} />
         </mesh>
       )}

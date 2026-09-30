@@ -683,3 +683,49 @@ Validate physical samples against approved renders/proofs, finalize support and 
 | Privacy, retention, and support policy                             | Merchant                     | Determines handling of personal text and artwork    |
 
 The defining experience is continuous authorship: the customer sees one pen become their own. The implementation earns that feeling by making every accepted choice accurate, recoverable, and deliverable.
+
+## 19. This repository: the Gate 1 vertical slice
+
+This repository implements a deployable slice of the specification as a Next.js app. It runs standalone on Vercel with a browser-local mock cart, and can later be mounted in a Shopify theme.
+
+### Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. Run `npm test` for the resolver, pricing, and order tests, and `npm run build` for a production build.
+
+### Deploy on Vercel
+
+1. Push the repository to GitHub and import it in Vercel. The framework preset is detected as Next.js; no build settings need changing.
+2. Set `PENFORGE_SIGNING_SECRET` to a long random value in the project's environment variables. It signs configuration revisions and share links. Without it, a public development fallback is used.
+3. Leave `NEXT_PUBLIC_COMMERCE_ADAPTER` unset (or `mock`) for a standalone deployment. Set it to `shopify` only when the app is served inside a Shopify theme, where the storefront Ajax Cart API is reachable.
+
+Or from the command line: `npx vercel` for a preview and `npx vercel --prod` for production.
+
+### Catalog: Parker collections
+
+The catalog in `src/server/catalog` models Parker's current lineup as grouped on parkerpen.com: Duofold Classic (Heritage); Sonnet, Parker 51 and Ingenuity (Classic); Urban (Stylish); IM, Jotter, Jotter XL and Vector XL (Essential). It expands to 219 approved offerings across finishes, trims (chrome, palladium, gold, rose gold, black PVD, IM Vibrant Rings), and writing modes (fountain, rollerball, ballpoint, gel, mechanical pencil).
+
+The finish, trim, and mode matrix was assembled from Parker's public collection pages and authorised retailers. parkerpen.com blocks automated access, so it could not be scraped directly. **Prices, SKUs, variant IDs, dimensions, and availability are illustrative** and must be replaced with the merchant's price book and verified product data before launch (see §18). Parker is a trademark of its owner; this project is not affiliated with or endorsed by Parker.
+
+### What is implemented
+
+| Area | Implementation |
+| --- | --- |
+| Resolver | Offering-level matching, per-facet candidate options with reasons, minimal-change conflict proposals, dependent-facet confirmation (`src/server/resolver`) |
+| Pricing | Integer minor units, quantity tiers, engraving and pad-print fees, setup, packaging, exact / quote_required states (`src/server/pricing`) |
+| Orders | HMAC-signed immutable configuration revisions, idempotent cart intents and quotes, stale-price and catalog-version rejection (`src/server/orders`) |
+| API | `GET /api/bootstrap`, `POST /api/resolve`, `POST /api/configurations`, `POST /api/cart-intents`, `POST /api/quotes`, `POST /api/designs`, `GET /api/designs/:token`, `GET /api/poster` |
+| Experience | One persistent procedural 3D pen (React Three Fiber) with a chapter camera director, hover preview, compare, 20-step undo, reduced motion, opt-in sound, and a verified 2D mode with a dimensioned flat layout |
+| Identity | Engraving with glyph, length, and physical-width checks; logo footprint with MOQ and pack-increment rules routed to quotes |
+| Commerce | Mock theme cart and a Shopify Ajax Cart adapter, both reconciled after add; distinct personalisations stay distinct lines |
+
+### Not yet implemented
+
+- Persistence: revisions, quotes, and share links are signed tokens, not database records. There is no operations console.
+- Real artwork upload, scanning, and preflight. Logo files are described by name, type, and size only.
+- Shopify theme app extension, draft-order invoicing, checkout validation functions, and webhooks.
+- glTF assets. The pen is generated from manifest parameters; a glTF loader can replace `PenModel` without changing the director or UI.
