@@ -1,1140 +1,685 @@
-# Immersive Shopify Pen Configurator
+# PenForge
 
-## PenForge
+## Product and implementation specification
 
-## Product Vision
+**Status:** Proposed build specification, not a description of a finished application.  
+**Product:** An immersive pen configurator embedded in a Shopify storefront.  
+**Core promise:** One pen, continuously present, that becomes yours through cinematic, manufacturable choices.
 
-This project is a Shopify-integrated pen configurator that makes buying a pen feel like building a premium object in a game inventory screen.
+PenForge turns a finite catalog of approved pens into an unusually personal buying experience. Customers explore silhouette, surface, color, details, and identity on one persistent hero pen. The system resolves their choices to a real factory offering and a supported order route.
 
-The central illusion is high customization. The real business model is constrained manufacturing.
+The feeling of freedom comes from presentation, thoughtful curation, and tactile feedback. Product claims, available choices, proportions, decoration areas, and checkout must remain accurate. A component that cannot change independently must never appear independently configurable.
 
-Customers interact with one persistent hero pen in an immersive 3D scene. They rotate, inspect, personalize, and order that pen through cinematic steps. Behind the experience, every choice maps to a controlled set of pre-approved factory SKUs, finishes, components, print methods, and order rules.
+This document defines proposed defaults. Factory capabilities, merchant policies, artwork tolerances, and Shopify store capabilities require verification before launch. All sample SKUs, prices, limits, and quantities below are illustrative.
 
-The configurator should feel like:
+## 1. The product decisions that matter
 
-- A premium object-customization experience, similar to configuring a lightsaber, watch, car trim, or game item.
-- A guided cinematic flow where the camera moves around the pen as each part is customized.
-- A simple buying experience that supports both one-off consumer purchases and bulk branded orders.
-- A manufacturable product graph disguised as creative freedom.
+| Decision                     | Required behavior                                                                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One persistent product       | A single main pen stays in the same scene through configuration, quantity changes, and review. Options live in controls; no orbiting product gallery.                 |
+| Immediate usefulness         | Open directly on a valid, priced pen with available controls. An entrance animation never gates interaction behind Start.                                             |
+| Five chapters                | Form, Surface, Details, Identity, Review. Only expose meaningful choices for the current offering.                                                                    |
+| Two purchasing intents       | Default to Personal. Offer Team / bulk beside quantity; do not force a business flow merely because someone uploads a logo.                                           |
+| Honest component editing     | A fixed grip remains inspectable. It is not a selectable grip option. Changing it through another body is explicitly a body change.                                   |
+| Deliberate conflict handling | Preserve compatible selections. Show and confirm consequential changes before applying them. Never silently replace selected color, ink, artwork, or personalization. |
+| Separate readiness states    | Manufacturing compatibility, price certainty, artwork approval, availability, and checkout eligibility are separate facts.                                            |
+| One trustworthy price        | Display a server-derived breakdown and reconcile it with Shopify. A browser price is never an instruction to charge that amount.                                      |
+| Operational completion       | A purchased item must become a traceable production ticket, with the correct artwork revision and payment/proof gates.                                                |
+| Accessible by construction   | Every purchase task works through ordinary HTML controls and a verified 2D representation, without manipulating the canvas.                                           |
 
-The user should never feel like they are browsing a spreadsheet of factory options. They should feel like they are designing a pen.
+### Success definition
 
-## Core Concept
+A first-time personal buyer should be able to select and buy a pen in about two minutes without waiting through mandatory cinematics. A team buyer with prepared artwork should be able to submit a complete quote request in about five minutes. These are usability hypotheses to test, not promised production metrics.
 
-The experience is built around one persistent 3D pen that remains on screen throughout the entire flow.
+Launch success requires zero accepted impossible configurations, zero unnoticed substitutions, and zero production releases against unapproved artwork. Conversion, contribution margin, quote completion, and production correction rate should improve together.
 
-Do not show a traditional product grid as the main experience. Do not move the user through separate pages for body, grip, clip, color, logo, and quantity. Instead, the camera moves around the same pen and reveals each editable zone in sequence.
+### Non-goals for the first release
 
-The pen is both:
+- Arbitrary CAD editing, dimensions, part mixing between factories, or freeform colors.
+- Photorealistic simulation of handwriting, ink flow, or every manufacturing process.
+- A public marketplace of factories.
+- Automatic production approval from a 3D preview.
+- Live factory procurement, automated supplier switching, or globally guaranteed delivery dates.
+- Spreadsheet imports for individually named pens, split shipments, and multiple artworks per order.
 
-- The product preview.
-- The main navigation surface.
+## 2. Buying experience
 
-At any moment, the interface should answer:
+### First screen
 
-- What part of the pen am I editing?
-- What changed on the actual object?
-- Is this option manufacturable?
-- What will I receive if I buy this?
+The hero pen is already visible as a poster while 3D loads. Show the merchant brand, selected pen name, actual price or explicitly labeled estimate, Personal / Team intent, and Form options. Use an approved default offering available at quantity one for the personal entry route.
 
-The backend constrains the available options. The frontend presents those constraints as elegant, intentional choices.
+The first screen must answer: What is this pen? What can I change? What does it cost? Can I buy one?
 
-## Target Users
+A desktop pen occupies roughly 65-80% of the unobstructed stage width. On phones it runs diagonally or vertically to preserve readable proportions. Surrounding UI stays restrained: a neutral studio stage, dark graphite text, real material swatches, and one merchant accent for selected controls. Avoid darkness that makes black products unreadable.
 
-### Individual Consumer
+No explanatory hero page, compulsory tutorial, login wall, or mandatory full assembly sequence. Returning configurations restore directly into their last chapter after revalidation.
 
-The individual buyer wants one premium, expressive pen.
+### Chapter structure
 
-Primary motivations:
+| Chapter  | Controls                                                       | Camera focus                      | Exit condition                                   |
+| -------- | -------------------------------------------------------------- | --------------------------------- | ------------------------------------------------ |
+| Form     | 3-5 approved body families; dimensions, weight, mechanism      | Entire silhouette                 | A body family is selected                        |
+| Surface  | Supported finish and physical color swatches                   | Barrel, then a three-quarter view | A compatible surface is committed                |
+| Details  | Only editable grip, trim, clip, refill, and packaging options  | Active detail                     | Defaults are acceptable; no forced changes       |
+| Identity | None, text, logo; eligible process and decoration zone         | Print or engraving area           | Identity is valid, omitted, or marked for review |
+| Review   | Quantity, specification, price breakdown, timing, proof status | Whole pen, artwork facing forward | Checkout or quote eligibility is established     |
 
-- Personal taste.
-- Gift giving.
-- Aesthetic novelty.
-- Name engraving or small personalization.
-- Fast purchase with minimal decision fatigue.
+Show all chapters in a compact navigation rail. Users can jump freely; validation concerns appear beside the affected field. Do not create empty steps for fixed components or make users press Next through one-option choices.
 
-The consumer flow should feel emotional, polished, and quick.
+A small product facts view provides length, barrel diameter, weight, mechanism, refill specification, included packaging, and verified material information. These facts follow the resolved physical product. Claims such as recycled content require supplier evidence.
 
-### Bulk Buyer
+### Selection semantics
 
-The bulk buyer wants pens for a company, event, school, conference, hotel, or client gift.
+- **Inspect:** Rotate, focus, or zoom without changing the order.
+- **Preview:** Desktop hover temporarily changes appearance after a 150 ms dwell. Price and summary remain committed, with a clear Preview label.
+- **Commit:** Click, tap, or keyboard activation requests resolution. Show immediate control feedback, then the accepted visual state.
+- **Undo:** Undo the last committed edit, including its dependent changes. Keep a session history of at least 20 edits.
+- **Compare:** Temporarily show the previous committed state on the same hero pen using a press-and-hold control or keyboard toggle. Label both states; no second hero model.
+- **Reset view:** Restore chapter framing without changing configuration.
+- **Reset design:** Confirm before discarding personalization or uploaded artwork.
 
-Primary motivations:
+Pointer exit or Escape cancels a hover preview. Touch selection commits directly; never require a hover-equivalent gesture. User orbit suspends the camera director until the next explicit chapter or focus action.
 
-- Logo placement.
-- Brand color accuracy.
-- Quantity pricing.
-- Production feasibility.
-- Proof approval.
-- Delivery timeline.
+### Constraint communication
 
-The bulk flow should preserve the cinematic pen experience, but gradually reveal operational controls once the customer signals business intent.
+Show currently usable options first. Keep an intentionally discovered but incompatible option visible with a concise reason and an actionable change proposal. Avoid filling the screen with disabled catalog options.
 
-## Experience Principles
+Example: choosing a satin body that only supports chrome trim opens an inline proposal:
 
-1. Keep the hero pen persistent.
-   The pen should not disappear between steps. It may explode, rotate, focus, assemble, or transform, but it remains the same object in the user's mental model.
+> Satin requires chrome trim. Change finish and trim?
 
-2. Hide complexity until needed.
-   A single consumer should not see MOQ rules, imprint methods, proofing, or tiered pricing unless relevant. A bulk buyer should get those controls as soon as they need them.
+The current pen and price remain committed until acceptance. Cancel restores the prior controls. An accepted proposal is one undoable transaction. If branding would be removed or its zone changed, that consequence must be stated before acceptance.
 
-3. Make constraints feel designed.
-   If a finish is not available with a barrel shape, do not present it as an error. The unavailable option should gracefully fade, slide away, or be replaced by compatible alternatives.
+## 3. Cinematic direction
 
-4. Use motion as explanation.
-   Camera movement should teach the product structure: tip, grip, barrel, clip, cap, clicker, ink, logo area, packaging.
+### Continuity rules
 
-5. Every visual option must map to a real purchasable configuration.
-   No fantasy state should be allowed to reach checkout.
+The pen's center, general orientation, and apparent scale should remain recognizable during ordinary choices. Change one perceptual axis at a time: geometry, material, or camera. Do not simultaneously fly the camera, replace the body, and flash the lights.
 
-6. Make bulk feel premium, not administrative.
-   Even quote requests, logo uploads, and proof previews should feel integrated into the object-building flow.
+Body transitions use authored crossfades or masked replacements around a shared anchor. Avoid visibly impossible intermediate geometry. Morph targets are optional only where the artist has authored compatible topology. Two meshes may overlap briefly inside a transition, but the viewer perceives one pen.
 
-## Information Architecture
+Use small axial separations only for physically meaningful parts, and only when the action explains a real choice. A fixed grip must not detach to imply interchangeability. An optional construction reveal can exist under Inspect; it is not the opening requirement.
 
-Recommended top-level flow:
+### Camera shot contract
 
-1. Entry
-2. Body profile
-3. Grip
-4. Finish
-5. Color
-6. Clip and trim
-7. Ink
-8. Personalization or branding
-9. Quantity and order type
-10. Review
-11. Shopify checkout or quote submission
+Each model has artist-authored focus anchors and component bounds. The director fits those bounds into the available stage rectangle after accounting for UI, rather than copying fixed world positions between pens.
 
-The flow can be linear by default, with a compact progress rail that lets users revisit completed steps.
+Use a perspective camera with a restrained product-photography lens, initially 45-60 mm on a 36 mm sensor equivalent. Author changes deliberately; avoid wide-angle distortion. Store distance, target, orientation, roll, and framing margin per shot and responsive layout.
 
-Desktop navigation:
+| Shot        | Composition and movement                                         | Default duration      | Reduced motion        |
+| ----------- | ---------------------------------------------------------------- | --------------------- | --------------------- |
+| Entry       | Full pen at a slight diagonal; a small settling rotation         | 650 ms, interruptible | Static fitted pose    |
+| Form        | Full silhouette; preserve screen center during replacement       | 300-450 ms            | Immediate replacement |
+| Surface     | Three-quarter barrel; small roll exposes the reflection          | 450 ms                | Static material view  |
+| Grip / tip  | Focus front third with enough barrel for context                 | 450-600 ms            | Direct reframe        |
+| Clip / trim | Rotate clip toward viewer without rolling UI                     | 450-600 ms            | Direct reframe        |
+| Identity    | Artwork zone faces viewer, near orthographic appearance          | 400-550 ms            | Direct reframe        |
+| Review      | Full pen with artwork visible; optional user-triggered turntable | 550 ms                | Static whole pen      |
 
-- Persistent hero pen in center.
-- Step controls docked to the side or bottom.
-- Compact step rail along the opposite edge.
-- Price and order summary visible but unobtrusive.
+Design timing is a budget, not a delay enforced before selection. If a customer chooses another step mid-flight, retarget from the current transform and cancel the old timeline. Never queue camera animations. Controls remain usable during movement.
 
-Mobile navigation:
+Render while moving; settle when idle. Do not run an endless idle spin. After the entrance, the scene stops unless the user requests rotation or makes a change.
 
-- Hero pen occupies the top or center majority of the viewport.
-- Controls appear in a bottom sheet.
-- Step rail becomes a horizontal segmented control.
-- Price, quantity, and primary action remain sticky near the bottom.
+### Framing and interaction boundaries
 
-## Immersive 3D UX
+Keep the active subject inside a safe rectangle with at least 24 px of clearance from control overlays. For detail shots, non-active parts may leave the frame; the active zone may not. The review shot always contains the entire pen.
 
-### Scene Composition
+Orbit has model-defined polar limits; zoom cannot enter the mesh or make the product unreadably small. Hit targets for small components use expanded invisible pick volumes, while visible selection remains on the real component. No camera motion is triggered by merely passing a pointer across the stage.
 
-The 3D scene should feel like a product stage, not a technical CAD viewer.
+### Lighting and material direction
 
-Recommended baseline:
+Use one neutral studio environment with a broad soft key above/front, a narrow strip reflection along the barrel, a low fill, and restrained contact shadow. A starting key-to-fill intensity ratio of roughly 3:1 is an art-direction reference, not a physical requirement.
 
-- One hero pen floating horizontally.
-- Subtle idle rotation when the user is not interacting.
-- Physically based materials.
-- Soft studio shadows.
-- Controlled reflections.
-- Minimal environment so the product remains dominant.
+- Metal: long controlled reflections reveal curvature and brushing direction.
+- Matte coating: broad highlights and physically plausible roughness; do not fake matte by darkening color.
+- Gloss: retain a readable highlight without clipping the selected color.
+- Transparent parts: only use transmission where the real pen is transparent; offer a cheaper mobile material.
+- Identity: roll the object and soften distracting reflection so artwork stays legible.
+- Review: return to the same neutral inspection light used for approval.
 
-The background should be clean and premium. It may be light or dark depending on brand direction, but it should not compete with the pen.
+Keep exposure, tone mapping, and color management consistent across colors. Brief reflection movement may explain a finish, but it must settle into comparable inspection lighting. Do not sell a hue using theatrical colored light.
 
-Avoid:
+Match renders against physical samples or approved factory references. Record model-specific material settings, scale, and reference photographs. Screen previews cannot certify Pantone matching, engraving contrast, or print color; show this limitation beside the relevant artwork/color decision.
 
-- Busy decorative backgrounds.
-- Product grids as the main interface.
-- Constant particle effects.
-- Overly dramatic lighting that prevents material inspection.
-- Camera motion that feels like a loading screen rather than a purposeful reveal.
+### Sound direction
 
-### Pen Anatomy
+Sound is off by default and starts only after explicit opt-in. Persist the preference locally. Use a mute icon with a tooltip and accessible state. Audio adds texture but carries no required information.
 
-The 3D model should be authored as separate named components:
+| Event                        | Sound                            | Limits                                             |
+| ---------------------------- | -------------------------------- | -------------------------------------------------- |
+| Accepted option              | Soft mechanical click            | 40-90 ms; once per committed selection             |
+| Real component assembly      | Muted seating sound              | 100-180 ms; no exaggerated impact                  |
+| Chapter change               | Very soft air movement, optional | 150-250 ms; skip during rapid navigation           |
+| Text engraving demonstration | Short dry texture                | At most once after editing ends; not per character |
+| Cart or quote confirmed      | Restrained confirmation          | Only after server success                          |
 
-- `tip`
-- `nib_or_ballpoint`
-- `grip`
-- `front_barrel`
-- `main_barrel`
-- `rear_barrel`
-- `clip`
-- `cap`
-- `clicker`
-- `trim_rings`
-- `ink_window`, if applicable
-- `logo_zone_primary`
-- `logo_zone_secondary`
-- `engraving_zone`
-- `packaging`, if included in review
+No hover sounds, background music, autoplay, or repeated error alarms. Normalize assets together, leave headroom, cap simultaneous voices at two, and throttle selection audio to one cue per 150 ms. Suspend audio in background tabs. Browser audio failure is non-blocking. Reduced motion and sound are independent settings; do not assume a universal browser reduced-sound API.
 
-Each component should support:
-
-- Focus targeting.
-- Material assignment.
-- Visibility or replacement.
-- Compatibility filtering.
-- Animation offsets for exploded views.
-- Analytics event tagging.
-
-### Persistent Hero Pen
-
-The hero pen should persist through:
-
-- Component selection.
-- Material changes.
-- Color changes.
-- Logo placement.
-- Quantity changes.
-- Review.
-
-When a selected option requires a different base SKU, the visual transition should still feel like the same pen evolving. Use morphing, crossfading, or masked replacement rather than a hard object swap.
-
-## Camera Choreography
-
-Camera movement is a core part of the product experience. It should be designed as a sequence of intentional shots.
-
-### Entry Shot
-
-Goal: Create emotional commitment.
-
-Behavior:
-
-- Pen floats horizontally in a centered studio shot.
-- Slow idle rotation.
-- Start button or first option appears after the pen settles.
-- Lighting glides slightly across the material to show quality.
-
-Suggested copy:
-
-- `Build your pen`
-- `Start`
-
-### Exploded Anatomy Shot
-
-Goal: Teach that the pen is customizable.
-
-Behavior:
-
-- On start, the camera pushes in.
-- Pen rotates to a clean side profile.
-- Components subtly separate along the pen axis.
-- Labels appear only for the active or hover-targeted component.
-- The pen reassembles before the first selection.
-
-Explosion should be elegant and controlled. It should not look like a mechanical teardown unless the brand is technical.
-
-### Body Profile Shot
-
-Goal: Choose the base silhouette.
-
-Behavior:
-
-- Camera pulls back to show the full pen.
-- Compatible body profiles appear as ghost silhouettes or small orbiting previews.
-- Hovering or tapping an option previews the profile on the hero pen.
-- Selection locks the body and filters downstream options.
-
-### Grip Shot
-
-Goal: Make texture tangible.
-
-Behavior:
-
-- Camera travels toward the front third of the pen.
-- Grip rotates toward the viewer.
-- Options affect texture, pattern, material, or ergonomic shape.
-- Use close lighting to reveal rubber, knurling, soft-touch, or metal grip details.
-
-### Finish Shot
-
-Goal: Show material response.
-
-Behavior:
-
-- Camera returns to a three-quarter view.
-- Environment reflections become more visible.
-- Finish changes should update roughness, metalness, normal maps, and reflections, not just color.
-
-Examples:
-
-- Matte resin
-- Gloss lacquer
-- Brushed aluminum
-- Anodized metal
-- Soft-touch coating
-- Recycled plastic
-- Transparent barrel
-
-### Color Shot
-
-Goal: Make color selection feel real.
-
-Behavior:
-
-- Color applies directly to the selected material.
-- Swatches should be organized by palette or brand families.
-- For bulk orders, allow brand color input using HEX, Pantone, or uploaded logo extraction.
-- Incompatible colors should not appear for materials or SKUs that cannot support them.
-
-### Clip And Trim Shot
-
-Goal: Emphasize premium details.
-
-Behavior:
-
-- Camera rotates 90 degrees to present the clip.
-- Clip and trim highlight with a subtle rim light.
-- Options change clip shape, trim color, plating, or accent material.
-
-### Ink Shot
-
-Goal: Keep practical choice simple.
-
-Behavior:
-
-- Camera moves toward tip.
-- Options are simple: black, blue, gel, ballpoint, rollerball, refill type, line width.
-- For consumer purchase, keep this step fast.
-- For bulk purchase, expose refill availability and factory lead-time impact.
-
-### Branding Shot
-
-Goal: Make personalization feel precise and trustworthy.
-
-Behavior:
-
-- Camera moves to the logo or engraving zone.
-- Barrel rotates to face the user.
-- A placement guide appears on the pen surface.
-- The user can add text, upload a logo, choose imprint color, or select engraving.
-- The preview should curve or project artwork onto the barrel surface rather than floating flat above it.
-
-### Review Shot
-
-Goal: Convert with confidence.
-
-Behavior:
-
-- Pen returns to full hero view.
-- It performs one slow rotation.
-- A concise configuration summary appears.
-- Price, quantity, shipping estimate, and primary action become clear.
-- For bulk orders, show proof status, quote path, MOQ warnings, and estimated production timeline.
-
-## Lighting Design
-
-Lighting should help users understand material and form.
-
-Recommended setup:
-
-- Key light: soft, large-area, slightly above and forward.
-- Rim light: narrow highlight along clip, barrel, and edges.
-- Fill light: low-intensity, prevents shadows from hiding details.
-- Reflection cards or HDRI: controlled enough to show metal and gloss finishes.
-
-Dynamic lighting moments:
-
-- Entry: slow sweep across the pen.
-- Finish step: increase reflection contrast.
-- Logo step: flatten glare so branding is readable.
-- Review: balanced product lighting with subtle premium motion.
-
-Lighting should change with purpose. Do not turn every step into a different dramatic scene.
-
-## Sound Design
-
-Sound should be optional, tasteful, and quiet by default.
-
-Rules:
-
-- Start muted unless the user enables sound or the context clearly supports audio.
-- Provide a visible sound toggle.
-- Never block checkout or selection with audio.
-- Respect system reduced-motion and reduced-sound preferences where available.
-
-Suggested sound palette:
-
-- Soft mechanical click on selection.
-- Gentle magnetic snap when components assemble.
-- Low whoosh during camera transitions.
-- Subtle material shimmer when finish changes.
-- Fine engraving sound during text personalization preview.
-- Quiet confirmation tone when configuration becomes valid.
-
-Avoid:
-
-- Loud game UI sounds.
-- Repetitive hover sounds.
-- Long musical loops.
-- Audio that makes the store feel gimmicky.
-
-## Transitions And Motion
-
-Motion should clarify the relationship between choices and the pen.
-
-Transition types:
-
-- Camera dolly: moving closer to the active component.
-- Object rotation: exposing the relevant side.
-- Exploded offset: separating components to show structure.
-- Material sweep: applying finish or color across a surface.
-- Magnetic snap: confirming a component choice.
-- Ghost preview: showing compatible alternatives without committing.
-- Soft dissolve: changing between manufacturable SKU geometries.
-
-Motion timing:
-
-- Micro-interactions: 100-200ms.
-- Option changes: 200-400ms.
-- Camera moves: 600-1100ms.
-- Entry and review cinematic moves: 1200-1800ms.
-
-All major motion should support a reduced-motion mode:
-
-- Replace long camera moves with direct reframing.
-- Replace object spin with short fades.
-- Keep all customization functional.
-
-## Interaction Model
+## 4. Responsive behavior and accessibility
 
 ### Desktop
 
-Desktop users should be able to:
-
-- Rotate the pen by dragging.
-- Zoom within limits.
-- Click components to jump to relevant steps.
-- Hover options to preview.
-- Click to commit.
-- Use keyboard navigation for all controls.
-- See a live configuration summary.
+At stage widths of 1024 px and above, use an unframed stage with a 320-380 px controls column and compact chapter navigation. Keep price and primary action in the controls column. Constrain the overall content width on ultrawide monitors while allowing the stage to extend.
 
-Recommended desktop layout:
+Drag rotates; wheel zoom operates only when the viewer has explicit focus so page scrolling remains predictable. Component clicks are shortcuts to equivalent HTML controls. Keyboard users never have to manipulate the canvas.
 
-- Center: 3D pen.
-- Left or bottom: current step options.
-- Right: summary, price, quantity, checkout.
-- Top: brand/store navigation kept minimal.
+### Mobile and narrow layouts
 
-### Mobile
+Below 768 px, use a top stage and bottom controls area. Between 768 and 1023 px, choose the layout based on usable stage width, not device detection.
 
-Mobile users should be able to:
+- Use dynamic viewport units and safe-area insets.
+- Default stage height is approximately 42-50% of the usable viewport.
+- Expanding controls shrinks and refits the stage instead of covering the pen.
+- On short landscape screens, switch to side-by-side or normal document scrolling.
+- A focused text field brings its editor into view above the software keyboard.
+- Single-finger stage drag rotates only when started inside the stage; scrolling elsewhere remains normal.
+- Provide accessible zoom controls; pinch is optional.
+- In compact branding mode, offer size and position fields alongside direct handles.
+- Keep the primary action visible without overlapping operating-system controls.
 
-- Swipe or drag the pen.
-- Tap visible option chips or swatches.
-- Use a bottom sheet for controls.
-- Expand review details only when needed.
-- Complete purchase with one thumb.
+Verify at 320, 390, 768, 1024, and 1440 CSS px widths, in portrait and landscape, with long translated labels and 200% zoom. Page sections must expand rather than clipping content.
 
-Recommended mobile layout:
+### Accessible commerce
 
-- Top/middle: 3D pen.
-- Bottom: step controls in a sheet.
-- Sticky bottom row: price and primary action.
-- Logo editing should use simplified placement handles and zoomed view.
+Target WCAG 2.2 AA as a release requirement, verified with automated and manual checks. The canvas is supplemental to a semantic HTML configurator.
 
-Mobile performance is a first-class requirement, not a degraded fallback.
+Use radio groups for single-choice options, labeled swatches with color names, visible focus, 44 px minimum touch targets, and readable contrast. Announce committed configuration changes and errors through a polite live region; do not announce animation frames or every hover.
 
-## Single-Consumer Flow
+Dialogs and expanded editors have predictable focus restoration. Reduced-motion mode disables camera travel, spins, explosive motion, and material sweeps. Provide a persistent motion preference in addition to honoring the OS setting.
 
-The single-consumer path should minimize business complexity.
+A 2D mode offers the same selections, price, identity form, summary, and ordering paths. Where exact decorated imagery cannot be generated, show an accurate base-product view plus a dimensioned flat artwork layout, explicitly identified as separate views. Never display an approximate decorated pen as the approved result.
 
-Default steps:
-
-1. Choose body style.
-2. Choose finish.
-3. Choose color.
-4. Choose trim.
-5. Choose ink.
-6. Add optional name or short engraving.
-7. Review.
-8. Add to cart.
+## 5. Personal purchase
 
-Consumer-specific behavior:
+1. Land on a valid quantity-one pen with price.
+2. Change Form or accept the default; explore Surface and Details.
+3. Add optional engraving, with physical size and glyph limits enforced.
+4. Review exact text, product specification, quantity, price, and dispatch estimate.
+5. Add to the existing Shopify cart and continue ordinary checkout.
 
-- Quantity defaults to `1`.
-- Hide MOQ and quote language.
-- Show exact price whenever possible.
-- Personalization limits should be clear before checkout.
-- Unsupported combinations should be quietly filtered.
+Skip Identity freely. Do not require an account to experiment or add to cart. A gift recipient's name remains private and is not placed in share URLs or analytics.
 
-Consumer conversion priorities:
+Quantity one requires a verified fulfillment route: stock blank plus local personalization, or a supplier that genuinely supports one-off orders. A bulk-only factory SKU must not be offered as an immediately purchasable single pen.
 
-- Fast load.
-- Immediate visual reward.
-- Simple choices.
-- Strong review preview.
-- Clear delivery estimate.
-
-## Bulk-Order Flow
-
-The bulk path should emerge naturally when the user changes quantity, selects `Order for a team`, uploads a logo, or chooses business-focused options.
-
-Bulk-specific steps:
+Paid text personalization must map to a supported Shopify-priced offer. If that route is unavailable, offer the plain pen or a clear quote path; never collect an engraving fee only in metadata.
 
-1. Choose body style.
-2. Choose finish and brand color.
-3. Add logo or campaign artwork.
-4. Choose imprint method.
-5. Choose packaging, if available.
-6. Select quantity.
-7. Review unit price tiers.
-8. Request proof, request quote, or add eligible bulk item to cart.
-
-Bulk controls:
-
-- Quantity selector with tiered pricing.
-- MOQ messaging.
-- Logo upload.
-- Imprint area selection.
-- Imprint color count.
-- Pantone or HEX support.
-- Proof preview.
-- Estimated production lead time.
-- Shipping deadline or event date.
-- Sales contact or quote submission.
-
-Bulk conversion priorities:
+## 6. Team and bulk purchase
 
-- Make manufacturability feel trustworthy.
-- Show when a configuration is production-ready.
-- Explain quote-needed states without making them feel like failure.
-- Preserve the premium 3D experience even when operational details appear.
+Team intent reveals quantity, artwork, decoration method, pricing tiers, and deadline fields early. A quantity change may suggest Team mode but must preserve the design and may be declined. Mode labels personalize the interface; actual quantity and manufacturing rules determine eligibility.
 
-## Branding And Logo Customization
+1. Select quantity and optionally destination country/postcode and required-by date.
+2. Choose a body and surface compatible with that quantity.
+3. Add artwork and select an approved zone and process.
+4. Review item cost, setup fees, proof requirements, and timing.
+5. Submit a complete quote request, or use supported instant checkout.
 
-Logo customization is central to the bulk flow and optional for consumer gifting.
-
-Supported personalization modes:
-
-- Plain text engraving.
-- Monogram.
-- Uploaded logo.
-- One-color imprint.
-- Multi-color imprint, if factory-supported.
-- Laser engraving, if material-supported.
-- Pad print.
-- UV print.
-- Screen print, if available.
+Show quantity tiers as a compact table with the current tier highlighted. MOQ and pack increments are separate rules. At 101 units with a pack size of 25, propose 125; do not round silently. Do not increase quantity automatically to hit a cheaper unit price.
 
-Logo upload requirements:
+One configuration represents one physical specification and one artwork treatment at one quantity. Multiple colors or designs become separate configurations and order lines. Setup charges are shared only when an explicit production rule permits it.
 
-- Accept SVG, PDF, PNG, JPG where supported.
-- Prefer vector formats for production.
-- Warn when raster resolution is too low.
-- Extract dominant brand colors from uploaded artwork.
-- Allow user to choose imprint color from compatible production colors.
+### Quote, proof, and payment policy
 
-Preview behavior:
+For the first release, custom logo work uses a quote-led route:
 
-- Artwork should be projected or UV-mapped onto the barrel.
-- Placement zone should reflect actual factory imprint area.
-- The preview must enforce size, position, and aspect-ratio constraints.
-- If the logo cannot be produced on a selected SKU, offer compatible alternatives.
+1. Customer submits a configuration and source artwork.
+2. Operations checks manufacturability, files, stock, price, and timing.
+3. Operations supplies a versioned quote and a production proof.
+4. Customer accepts the quote and approves the exact proof revision.
+5. A Shopify draft-order invoice collects payment.
+6. Production is released only when the financial and proof gates pass.
 
-Proofing behavior:
+The commercial policy may later allow payment before proof approval, but the production gate remains mandatory. Quote expiry, stock reservation policy, revision allowance, deposit terms, and rush rules must be merchant-configured before enabling that alternative.
 
-- Consumer text engraving may go directly to cart if supported.
-- Bulk logo orders may require proof approval.
-- The review step should clearly label preview states:
-  - `Preview only`
-  - `Production-ready`
-  - `Proof required`
-  - `Quote required`
+Sending a quote request does not create a paid order or guarantee a delivery date. Confirmation shows a request ID, submitted design, next action, and a response target only if the team has committed to it.
 
-## Backend Compatibility Graph
+Offer sample ordering only when an actual sample SKU and fulfillment policy exist. A future preproduction sample is a separate quote line and approval step.
 
-The backend should model the catalog as a compatibility graph, not as independent dropdowns.
+## 7. Identity and artwork production
 
-Each visible choice narrows the set of manufacturable configurations.
+### Physical coordinate system
 
-Core entities:
-
-- Factory
-- Base pen model
-- Component
-- Material
-- Finish
-- Color
-- Clip option
-- Trim option
-- Ink refill
-- Decoration method
-- Decoration zone
-- Packaging option
-- Quantity tier
-- SKU
-- Lead time
-- Price rule
+Store decoration in millimeters, relative to an authored factory zone, never in viewport pixels. Each zone declares:
 
-### Compatibility Rules
+- Process eligibility and usable polygon.
+- Local origin, axial direction, circumferential direction, and outward normal.
+- Seam, clip, curvature, and keep-out boundaries.
+- Width/height limits, minimum line weight, minimum text height, and placement tolerance.
+- Maximum imprint colors and supported physical color references.
 
-Examples:
+Persist position, physical width/height, rotation, process, and source asset revision. UV/decal projection is only the display representation of these coordinates.
 
-- Body model A supports rubber grip, metal grip, and soft-touch grip.
-- Body model B supports metal grip only.
-- Matte finish supports 12 colors.
-- Anodized aluminum supports 8 colors.
-- Laser engraving is available only on metal barrels.
-- Full-color logo printing is available only above a quantity threshold.
-- Gold trim is available only with specific clip shapes.
-- Factory X supports rush production only for approved SKUs.
+A body change revalidates the zone. A similar-looking barrel does not justify carrying over production coordinates without an approved mapping and customer confirmation.
 
-The frontend should never assemble an invalid configuration. It should request available options based on current state.
+### Text
 
-### Graph Behavior
+Offer only licensed, production-approved fonts and supported glyphs. Enforce both character policy and measured physical bounds. Preserve entered text exactly; do not silently truncate, transliterate, or remove unsupported characters.
 
-When a user selects an option:
+The editor shows text content, font, physical size, alignment, and eligible zone. A server-side typesetting step generates reproducible production outlines. Pin font versions so saved proofs do not change after a font update.
 
-1. Update the selected configuration.
-2. Query or compute compatible downstream options.
-3. Preserve existing downstream choices if still valid.
-4. Gracefully replace invalid downstream choices with the closest compatible default.
-5. Update the 3D preview.
-6. Update price, lead time, and order eligibility.
+### Logo upload
 
-### Option Presentation
+Proposed launch formats: SVG, single-page PDF, PNG, and JPEG; maximum 20 MB and a documented decoded-image limit. Enforce size, type, page count, and complexity on the server. Reject or route ambiguous PDFs to review.
 
-Do not show every backend option equally.
+Store the original privately. Validate file signatures, scan uploads, strip executable SVG content and external references, and generate previews in an isolated worker. Never insert arbitrary uploaded SVG into storefront HTML.
 
-Options should be curated into user-facing groups:
+Track processing as uploaded -> processing -> ready or rejected. A successful upload is not production approval. Avoid blocking the rest of configuration while processing.
 
-- `Classic`
-- `Modern`
-- `Executive`
-- `Eco`
-- `Lightweight`
-- `Metal`
-- `Soft touch`
-- `Best for logos`
-- `Fastest production`
+Evaluate raster quality at actual print size:
 
-These groups can map to many underlying SKUs.
+```text
+effective_dpi = pixel_width / (print_width_mm / 25.4)
+```
 
-## Shopify Integration
+A provisional 300 DPI threshold is a warning baseline; each process needs factory-specific limits. Validate line thickness, transparent areas, color count, and contrast. Do not auto-remove a background, simplify a mark, or convert it to one color without explicit acceptance.
 
-The configurator should integrate with Shopify as a product-customization layer.
+HEX values and extracted logo colors are visual references. Pantone references are a production request; availability, matching fees, MOQ, and sample approval must be confirmed. Never imply that an arbitrary HEX entry is an available barrel color.
 
-Recommended integration approaches:
+### Proof contract
 
-- Shopify theme app extension for storefront placement.
-- Shopify app proxy or backend service for configuration validation.
-- Shopify cart line item properties for personalization metadata.
-- Shopify product variants for core purchasable SKUs where practical.
-- Draft orders or quote workflow for complex bulk purchases.
+A production proof contains the configuration revision, exact artwork checksum, process, physical dimensions, position, imprint colors, product finish, quantity, and tolerance note. Present a dimensioned flat layout and a product mockup.
 
-### Add To Cart
+Approval records the approver, timestamp, proof version, and checksum. Changes to artwork, zone, process, physical product, or any proof-governed field invalidate approval. Quantity changes always require commercial revalidation and may require a revised proof according to process rules.
 
-For cart-ready configurations, the app should submit:
+Keep these statuses distinct:
 
-- Shopify variant ID or product ID.
-- Quantity.
-- Configuration ID.
-- Human-readable configuration summary.
-- Personalization text.
-- Logo asset reference, if applicable.
-- Proof requirement flag.
-- Factory SKU.
-- Production lead-time estimate.
+| Status              | Meaning                                                        |
+| ------------------- | -------------------------------------------------------------- |
+| Preview             | Customer-facing visualization only                             |
+| Preflight passed    | Automated checks passed; human review may still be required    |
+| Proof pending       | Production proof has not been approved                         |
+| Proof approved      | The identified revision is approved                            |
+| Quote required      | Price or production terms require confirmation                 |
+| Production eligible | All manufacturing, commercial, artwork, and payment gates pass |
 
-Use line item properties for customer-visible details and backend metadata where appropriate.
+## 8. Catalog and compatibility model
 
-Example line item properties:
+### Model real offerings first
 
-- `Body`: `Aero Metal`
-- `Finish`: `Brushed Aluminum`
-- `Color`: `Midnight Blue`
-- `Trim`: `Chrome`
-- `Ink`: `Black Gel 0.5mm`
-- `Personalization`: `A. Chen`
-- `Configuration ID`: `cfg_01J...`
-- `Factory SKU`: `PEN-MTL-042-BLU-CHR`
-- `Proof Required`: `No`
+Use an approved offering as the atomic manufacturable record: a specific base pen SKU, supported decoration recipe, packaging route, quantity rules, and fulfillment source. Factory components are not assumed interchangeable.
 
-### Quote Flow
+The compatibility graph is a way to discover these offerings. It can initially be implemented using relational tables and indexed candidate filtering; a graph database is not required.
 
-Some bulk orders should not go directly to checkout.
+| Entity                 | Purpose                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| Body family            | Customer-facing silhouette and product facts                                   |
+| Factory SKU            | Exact physical blank or finished pen specification                             |
+| Offering               | Approved combination of SKU, decoration route, packaging, and commercial rules |
+| Attribute              | Finish, color, grip, trim, mechanism, refill; fixed or selectable              |
+| Decoration recipe      | Zone, method, tolerances, artwork limits, setup requirements                   |
+| Asset manifest         | Approved geometry/material/anchor versions for the physical product            |
+| Price book             | Currency, market, tiers, setup fees, effective dates                           |
+| Availability record    | Stock/capacity, source, timestamp, expiry                                      |
+| Shopify mapping        | Sellable variant or reviewed draft-order route                                 |
+| Configuration revision | Customer choices and authoritative resolved result                             |
 
-Quote-required triggers:
+Pairwise compatibility is insufficient: finish A may work with trim B and body C independently without the three-way combination existing. Every accepted complete selection must resolve to at least one approved offering.
 
-- Quantity exceeds normal checkout threshold.
-- Logo file requires manual review.
-- Multi-location imprint.
-- Non-standard color match.
-- Rush delivery request.
-- Unpriced factory combination.
-- Sales approval required.
+### Resolution algorithm
 
-Quote submissions should capture:
+1. Load a published catalog version and normalize the request.
+2. Filter offerings by market, channel, publication, quantity, and applicable production rules.
+3. Match all committed product attributes and artwork/process constraints.
+4. For each editable facet, compute candidate options while holding the other committed facets fixed.
+5. If the requested edit produces no candidates, return conflict reasons and minimal-change proposals.
+6. Rank valid candidates deterministically using approved merchant policy: fidelity, availability freshness, then fulfillment priority.
+7. Return a selected offering, available facets, pricing status, timing, requirements, and asset manifest.
+8. At submission, revalidate against current catalog and commerce data and freeze the accepted revision.
 
-- Customer contact information.
-- Company name.
-- Desired quantity.
-- Event date or deadline.
-- Full configuration.
-- Uploaded assets.
-- Preview image.
-- Backend compatibility state.
-- Estimated price range, if available.
+The frontend does not reconstruct compatibility rules from option names. Shared client rules may make feedback faster, but the server is authoritative.
 
-## State Model
+If several suppliers make apparently equivalent pens, substitution still needs an approved equivalence definition covering geometry, finish, refill, decoration, packaging, and customer claims. Once an order snapshot is accepted, do not silently reroute it to a materially different product.
 
-The configurator state should be serializable, shareable, and validated by the backend.
+### Illustrative fixture
 
-Example state shape:
+| Offering | Body / surface            | Trim             | Identity                         | Quantity rule     |
+| -------- | ------------------------- | ---------------- | -------------------------------- | ----------------- |
+| A1       | Slim metal / matte black  | Chrome           | None or verified local engraving | 1+                |
+| A2       | Slim metal / matte black  | Gold             | None or verified local engraving | 1+                |
+| B1       | Slim metal / satin silver | Chrome           | One-color pad print              | 100+, packs of 25 |
+| C1       | Recycled resin / white    | Fixed white clip | One-color pad print              | 250+, packs of 50 |
+
+From A2, selecting satin silver requires a chrome-trim change and moves to a bulk-only offering. The interface must propose both consequences. At quantity one, it should explain why that selection cannot be purchased and retain A2 until a supported alternative is chosen.
+
+## 9. Pricing, availability, and timing
+
+Use decimal-safe monetary arithmetic and explicit currencies. Internal integer minor units require a currency exponent; never assume every currency has two decimals.
+
+```text
+merchandise_subtotal =
+  quantity * (base_unit + decoration_unit + packaging_unit)
+  + setup_fees + approved_one_time_fees
+  - applicable_discounts
+```
+
+Display unit merchandise cost, quantity, setup fees, other charges, discounts, and subtotal separately. Effective per-pen cost may be shown as an additional figure, with setup allocation labeled. Taxes and shipping are identified as included, estimated, or calculated at checkout.
+
+Pricing states are exact, estimated, quote_required, or unavailable. Only exact, unexpired, commerce-reconciled prices qualify for direct checkout. Quantity tiers apply per eligible configuration unless the price book explicitly supports aggregation.
+
+Keep proof duration, production time, and transit time separate. The manufacturing clock begins after required approval and payment. Estimated arrival needs a destination, business calendars, production cutoff, proof assumptions, and carrier transit data. Otherwise show estimated dispatch after approval, not a delivery promise.
+
+Each resolution records availability age and expiry. Stale stock/capacity may force reconfirmation or quoting. A saved design is not a stock reservation. Shopify and factory inventory need an explicit source-of-truth policy per offering.
+
+## 10. Shopify integration
+
+### Launch architecture
+
+Embed a storefront app through a theme app extension. Load the experience only where mounted and integrate with the theme's existing cart. Use a backend service for configuration, private artwork, pricing, quotes, and order processing. Keep Admin API credentials on the server.
+
+Use the storefront Ajax Cart API for theme carts. It accepts variant IDs, quantities, and properties; it does not make a custom amount in a property into a price. Use locale-aware cart URLs. See the [official Cart API reference](https://shopify.dev/docs/api/ajax/reference/cart).
+
+For a future headless storefront, use the Storefront Cart API and its checkout URL; implement that as a separate adapter rather than mixing cart identities.
+
+### Price representation
+
+Select one supported commercial route for every offering:
+
+| Route                       | Use                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------- |
+| Pre-priced Shopify variant  | Stock pen or approved personalization offer with a representable price          |
+| Verified discount mechanism | Supported quantity reduction; eligibility and cart-edit behavior must be tested |
+| Reviewed draft order        | Custom logo work, setup charges, nonstandard pricing, or sales-approved terms   |
+
+Do not create a variant for each engraving string. Do not assume line properties enforce charges, and do not rely on removable fee products without enforcement. If the target store cannot securely represent the full price, use the draft-order route.
+
+Draft orders support reviewed order construction and invoicing. Their pricing, inventory, shipping, and tax behavior must be tested for the chosen line types. See [draftOrderCreate](https://shopify.dev/docs/api/admin-graphql/latest/mutations/draftOrderCreate).
+
+### Checkout eligibility and trust
+
+An app-side validation before adding to cart can be bypassed by later cart edits. The implementation must establish checkout-level enforcement for custom items on the target store, or route them through a reviewed draft order.
+
+Investigate the [Cart and Checkout Validation Function API](https://shopify.dev/docs/api/functions/latest/cart-and-checkout-validation) for the store's plan, distribution model, and supported validation data. Do not assume access to remote resolver calls or unsupported capabilities. A paid-order review hold is a final safeguard, not a replacement for accurate checkout.
+
+Before launch, test quantity edits, accelerated checkout, direct cart requests, deleted properties, expired configurations, discounts, currency changes, and mixed carts. Personalized direct checkout remains disabled until the supported path passes these cases.
+
+### Cart transaction
+
+1. Create a server-owned immutable configuration revision with accepted pricing.
+2. Revalidate current availability, artwork eligibility, and Shopify mapping.
+3. Produce a cart intent with the exact variant, quantity, configuration reference, and expiry.
+4. Add through the chosen storefront adapter.
+5. Read the resulting cart and reconcile variant, quantity, reference, and price.
+6. Show success only after confirmed cart state; return unresolved discrepancies for correction.
+
+Use a mutation ID to prevent repeated button presses from creating duplicate intents. Shopify Ajax calls are not made idempotent by an app request header: after a timeout, read and reconcile the cart before retrying. Distinct personalizations of the same variant must remain distinct lines.
+
+Customer-visible properties contain concise product and personalization details. Private properties may carry an opaque configuration reference, but are not secrets or trustworthy input. Keep supplier IDs, costs, source artwork URLs, and internal approval controls in the backend. A signature alone does not enforce anything unless a trusted component verifies it.
+
+### Order-to-production handoff
+
+Receive Shopify order/payment/cancellation updates; verify delivery signatures against the raw request body, durably enqueue, and process idempotently. Shopify documents HTTPS signature verification in [Verify webhook deliveries](https://shopify.dev/docs/apps/build/webhooks/verify-deliveries).
+
+Maintain a unique production job per merchant, order line, and accepted configuration revision. Reconcile missed updates periodically. Handle duplicate and out-of-order events by checking current order state before irreversible production release.
+
+Release requires the exact purchased specification, sufficient payment under merchant policy, approved artwork when required, confirmed supply, and no cancellation/hold. Missing or altered configuration references create an operations hold.
+
+The production ticket includes factory SKU, configuration revision, quantity, process, dimensions, source and approved artwork references, proof checksum, packaging, ship-to reference, and production timing. Preview images are supporting evidence, never the production master.
+
+## 11. State and API contracts
+
+### Separate four kinds of state
+
+| State              | Owner                    | Examples                                                            |
+| ------------------ | ------------------------ | ------------------------------------------------------------------- |
+| Presentation       | Browser                  | Active chapter, camera pose, hover preview, expanded sheet, sound   |
+| Editable draft     | Browser plus saved draft | Selected IDs, text, asset revision, quantity, intent                |
+| Resolution         | Server                   | Candidate offering, price, reasons, availability, checkout route    |
+| Submitted revision | Server, immutable        | Accepted choices, catalog/assets/pricing versions, proof references |
+
+Presentation state must not affect price or manufacturing. A hover preview never overwrites the draft. A submitted revision is immutable; editing it forks a new draft.
+
+### Illustrative resolution
 
 ```json
 {
-  "configurationId": "cfg_01JABC123",
-  "mode": "consumer",
-  "selected": {
-    "baseModelId": "base_aero_metal",
-    "bodyProfileId": "slim",
-    "gripId": "knurled_metal",
-    "finishId": "brushed_aluminum",
-    "bodyColorId": "midnight_blue",
+  "schemaVersion": 1,
+  "requestId": "req_104",
+  "draftRevision": 12,
+  "catalogVersion": "catalog_7",
+  "configurationRevisionId": null,
+  "selection": {
+    "bodyFamilyId": "slim_metal",
+    "surfaceId": "matte_black",
     "trimId": "chrome",
-    "clipId": "classic_clip",
-    "inkId": "black_gel_05",
-    "packagingId": "standard_box"
-  },
-  "personalization": {
-    "type": "engraving",
-    "text": "A. Chen",
-    "zoneId": "engraving_zone",
-    "fontId": "serif_01"
-  },
-  "branding": {
-    "logoAssetId": null,
-    "decorationMethodId": null,
-    "zoneId": null,
-    "imprintColors": []
-  },
-  "order": {
+    "refillId": "black_ballpoint",
+    "identity": { "type": "none" },
     "quantity": 1,
-    "currency": "USD",
-    "requiresQuote": false,
-    "requiresProof": false
+    "marketId": "market_us"
   },
-  "resolved": {
-    "factorySku": "PEN-MTL-042-BLU-CHR",
-    "shopifyVariantId": "gid://shopify/ProductVariant/123456789",
-    "unitPrice": 42,
-    "leadTimeDays": 5,
-    "valid": true
+  "resolution": {
+    "offeringId": "offer_A1_plain",
+    "manufacturing": "compatible",
+    "artwork": "not_required",
+    "availability": "confirmed",
+    "pricing": {
+      "status": "exact",
+      "currency": "USD",
+      "minorUnitExponent": 2,
+      "unitMinor": 2400,
+      "setupMinor": 0,
+      "merchandiseSubtotalMinor": 2400,
+      "tax": "checkout",
+      "shipping": "checkout",
+      "priceBookVersion": "prices_3"
+    },
+    "commerce": { "route": "variant_cart", "eligible": true },
+    "assetManifestVersion": "assets_A1_4",
+    "expiresAt": "2026-10-01T12:00:00Z",
+    "reasons": [],
+    "proposedChanges": [],
+    "availableFacets": []
   }
 }
 ```
 
-### State Requirements
+This simplified response omits server-only supplier routing and Shopify mapping details. Real responses populate facet options and use machine-readable reason codes such as MOQ_NOT_MET, ARTWORK_PENDING, PRICE_EXPIRED, and NO_APPROVED_OFFERING.
 
-- State must be recoverable from a URL or configuration ID.
-- Backend validation is required before add-to-cart or quote submission.
-- Frontend state should optimistically update for smooth interaction.
-- Invalid states must be resolved before checkout.
-- Configuration IDs should be immutable snapshots once submitted.
+### Async behavior
 
-## Data Model Guidance
+Increment draftRevision for every committed edit. Each request carries that revision and a request ID. Apply a response only if it matches the latest draft; abort obsolete requests where possible and ignore late ones.
 
-Recommended tables or collections:
+On timeout retain the last confirmed render and clearly mark the current draft as unresolved. Disable submission, not editing. Do not show an old price as current while a new quantity or product selection resolves.
 
-- `factories`
-- `base_models`
-- `components`
-- `materials`
-- `finishes`
-- `colors`
-- `component_options`
-- `decoration_methods`
-- `decoration_zones`
-- `ink_options`
-- `packaging_options`
-- `compatibility_rules`
-- `sku_mappings`
-- `price_rules`
-- `quantity_tiers`
-- `lead_time_rules`
-- `configurations`
-- `uploaded_assets`
-- `quote_requests`
+Cart eligibility requires matching draft/resolution revisions, current pricing, accepted dependencies, and a valid route. Animation completion is never a prerequisite.
 
-The most important backend capability is resolving a user-facing configuration into:
+### Endpoints
 
-- A valid factory SKU.
-- A Shopify purchasable item or quote path.
-- A price.
-- A lead time.
-- A proof requirement.
-- A set of production metadata.
+| Endpoint                     | Contract                                                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------- |
+| GET /api/bootstrap           | Published catalog summary, default resolved offering, asset manifest, feature flags |
+| POST /api/resolve            | Draft + revision + market -> resolution or explicit conflict proposals              |
+| POST /api/assets             | Validated upload initiation; returns private upload target and asset ID             |
+| GET /api/assets/:id          | Authorized processing and preflight status                                          |
+| POST /api/configurations     | Revalidate and create immutable revision; reject stale accepted terms               |
+| POST /api/cart-intents       | Create/retrieve intent using mutation ID; no browser price authority                |
+| POST /api/quotes             | Idempotent request tied to a configuration revision                                 |
+| POST /api/proofs/:id/approve | Authenticated approval of exact checksum/version                                    |
+| GET /api/designs/:token      | Authorized or deliberately public saved design; never source artwork by default     |
 
-## API Guidance
+Use 409 for stale revisions or changed commercial terms, 422 for field-level invalidity, and retryable server errors for temporary failures. Responses include field paths, reason codes, and human-readable messages. Retries with the same mutation ID return the same application result.
 
-Suggested API endpoints:
+Save non-sensitive draft preferences locally. Server save/share links use revocable opaque tokens and explicit sharing intent. Shared public views exclude personal text and artwork unless the owner deliberately includes them. Reopening old designs revalidates availability and shows changes before purchase.
 
-```http
-GET /api/configurator/bootstrap
+## 12. Implementation architecture and assets
+
+Use TypeScript and Three.js, with React Three Fiber when the host UI uses React. Use the existing application framework where possible; keep the renderer separate from the commerce adapter. Choose one animation owner for camera/object timelines to prevent competing writes.
+
+Suggested module boundaries:
+
+```text
+storefront/
+  configurator/      HTML controls and chapter flow
+  scene/             hero pen, materials, camera director, picking
+  state/             draft history, previews, revision reconciliation
+  commerce/          Shopify theme-cart adapter
+server/
+  catalog/           published offering records and manifests
+  resolver/          candidate filtering and conflict proposals
+  pricing/           price books and eligibility
+  artwork/           processing jobs and versioned proofs
+  orders/            quotes, cart intents, Shopify events, production gates
+shared/
+  contracts/         request schemas, IDs, reason codes
+assets/
+  manifests/         versioned product/component/zone mappings
 ```
 
-Returns initial scene, default model, curated option groups, and tracking metadata.
+### 3D production contract
 
-```http
-POST /api/configurator/resolve
-```
+Use glTF/GLB with documented real-world scale. Suggested convention: meters, pen axis along +Y from tip to rear, clip facing +Z, origin at the product center. Every asset must declare its convention and pass import validation.
 
-Accepts current selections and returns valid compatible options, price, SKU, lead time, and warnings.
+The manifest contains component nodes, material slots, focus anchors, assembly pivots, bounds, decoration zone transforms, LODs, poster images, and content hashes. Missing nodes fail catalog publication, rather than producing broken storefront controls.
 
-```http
-POST /api/configurator/assets/logo
-```
+Author clean UVs, accurate normals, consistent tangents, and real proportions. Engraving is a material/normal treatment matched to the process; a deep geometric cut is inappropriate unless physically correct. Test decals across rotation for seams, clipping, and z-fighting.
 
-Uploads logo artwork and returns asset metadata, preview readiness, color extraction, and production warnings.
+Assets load from versioned CDN paths. Preload the active pen first and likely alternatives only after interaction is usable. Dispose unused GPU resources. Catalog publication must not point to assets that have not finished uploading and validation.
 
-```http
-POST /api/configurator/configurations
-```
+### Work to prove first
 
-Creates an immutable saved configuration snapshot.
+Before building elaborate transitions, ship one complete vertical slice: approved physical pen -> resolved selection -> accurate render -> Shopify cart -> test paid order -> production ticket.
 
-```http
-POST /api/configurator/cart
-```
+That slice validates the most expensive assumptions: accurate product data, single-unit fulfillment, personalization pricing, and reliable order identity.
 
-Validates the saved configuration and returns Shopify cart payload or redirects to checkout.
+## 13. Performance and fallback budgets
 
-```http
-POST /api/configurator/quote
-```
+These are proposed release budgets, measured on an agreed midrange Android phone and iPhone Safari over a throttled 10 Mbps / 100 ms RTT connection, plus a current desktop browser. Record exact devices and test versions.
 
-Submits a bulk quote request with configuration, asset, quantity, and customer details.
+| Measure                      | Initial target                                               |
+| ---------------------------- | ------------------------------------------------------------ |
+| Visible default poster / LCP | <= 2.5 seconds at p75                                        |
+| Usable default controls      | <= 3 seconds in the test profile                             |
+| Interactive 3D               | <= 4 seconds in the test profile                             |
+| Local selection feedback     | <= 100 ms                                                    |
+| Warm resolver latency        | <= 300 ms p95, measured separately from network              |
+| Frame time                   | <= 33 ms mobile; <= 17 ms desktop during ordinary motion     |
+| Initial experience transfer  | <= 3 MB compressed, including default model/textures/runtime |
+| Visible geometry             | Target <= 80k triangles on mobile                            |
+| Draw calls                   | Target <= 60 for the default mobile scene                    |
+| Texture/GPU budget           | Target <= 96 MB estimated allocation                         |
 
-## Frontend Implementation Guidance
+Asset budgets are starting constraints to validate against real appearance. Use Meshopt or Draco as appropriate, KTX2 textures with tested fallbacks, practical mipmaps, and mobile texture sizes initially capped at 2048 px. Cap mobile device pixel ratio initially at 1.5; tune with measurements.
 
-Recommended stack:
+Adapt quality based on observed frame time: reduce pixel ratio, contact shadows, transmission, and secondary effects before sacrificing accurate materials or artwork. Render on demand when settled; pause hidden tabs.
 
-- Three.js or React Three Fiber for 3D rendering.
-- GSAP, Framer Motion, or native animation timelines for UI transitions.
-- Zustand, Redux Toolkit, or equivalent for configuration state.
-- Shopify theme app extension or storefront integration layer.
-- Backend service for SKU resolution and validation.
+Keep the poster until the first complete 3D frame. Handle load failures, context loss, and decoder failure. After a bounded retry, offer 2D mode with the same draft intact. Ordering must not depend on canvas screenshot generation.
 
-### Rendering Architecture
+## 14. Operations, privacy, and catalog ownership
 
-Separate the system into:
+### Catalog publication
 
-- `Scene`: lights, camera, renderer, environment.
-- `HeroPen`: assembled 3D model and component registry.
-- `CameraDirector`: named shots and transitions.
-- `ConfiguratorState`: selected options and resolved backend state.
-- `OptionPanel`: current step controls.
-- `CompatibilityClient`: backend resolution calls.
-- `ShopifyBridge`: cart, checkout, and line item payloads.
-- `AnalyticsTracker`: event capture.
+A product owner curates customer-facing families. Factory operations owns manufacturing records and tolerances. A 3D artist owns representation accuracy. Commerce owns sellable mappings and prices. Production operations owns proof approval and release.
 
-### Component Registry
+Publish catalog versions atomically after checks for orphan options, zero-candidate defaults, missing assets, missing prices/routes, invalid zones, and quantity gaps. Test each offering through at least one valid path. Keep rollback versions available.
 
-The 3D model should expose named component handles:
+Catalog changes do not mutate submitted order revisions. Archived offerings remain readable for historical orders. Customer reorders fork and revalidate.
 
-```ts
-type PenComponentKey =
-  | "tip"
-  | "grip"
-  | "main_barrel"
-  | "clip"
-  | "cap"
-  | "clicker"
-  | "trim_rings"
-  | "logo_zone_primary";
-```
-
-Each step can reference component keys for focus, highlight, and material assignment.
-
-### Camera Director
-
-Define named shots instead of hardcoding camera positions throughout UI components.
-
-Example:
-
-```ts
-type CameraShot =
-  | "entry"
-  | "anatomy"
-  | "body"
-  | "grip"
-  | "finish"
-  | "color"
-  | "clip"
-  | "ink"
-  | "branding"
-  | "review";
-```
-
-The camera director should own:
-
-- Position.
-- Target.
-- Focal length.
-- Rotation constraints.
-- Transition duration.
-- Easing.
-- Reduced-motion alternative.
-
-## Performance Requirements
-
-Performance targets:
-
-- First meaningful visual: under 2.5 seconds on modern mobile.
-- Interactive configurator: under 4 seconds on modern mobile.
-- Option change visual response: under 100ms optimistic feedback.
-- Backend resolution response: ideally under 300ms.
-- Maintain 60 FPS on desktop where possible.
-- Maintain 30 FPS minimum on mobile.
-
-3D asset requirements:
-
-- Use compressed glTF or GLB.
-- Use Draco or Meshopt compression where appropriate.
-- Use KTX2 or WebP textures.
-- Keep polygon counts practical for mobile.
-- Lazy-load optional components.
-- Preload the next likely step assets.
-- Use environment maps responsibly.
-- Avoid excessive real-time lights.
-
-Fallback behavior:
-
-- If 3D fails, show high-quality rendered images for selected configurations where possible.
-- If WebGL is unavailable, provide a simplified 2D configuration flow.
-- Checkout and quote submission must remain possible without full 3D.
-
-## Accessibility Requirements
-
-The configurator must be usable without relying solely on motion, color, sound, or pointer interactions.
-
-Requirements:
-
-- Full keyboard navigation.
-- Visible focus states.
-- Screen-reader labels for controls.
-- Text alternatives for selected configuration.
-- Color names shown alongside swatches.
-- Reduced-motion support.
-- Mute and no-audio support.
-- Sufficient contrast in all UI panels.
-- Touch targets at least 44px on mobile.
-- No essential information conveyed only by hover.
-- Clear validation messaging for personalization and bulk constraints.
-
-The 3D scene can be decorative for assistive technology, but the configuration state and available actions must be exposed through accessible controls.
-
-## Analytics
-
-Analytics should measure both commerce performance and configurator quality.
-
-Track:
-
-- Configurator opened.
-- Start clicked.
-- Step viewed.
-- Option previewed.
-- Option selected.
-- Invalid option filtered.
-- Configuration resolved.
-- Personalization added.
-- Logo uploaded.
-- Bulk mode entered.
-- Quantity changed.
-- Quote required.
-- Add to cart clicked.
-- Quote submitted.
-- Checkout completed, if available.
-- Drop-off step.
-- 3D load failure.
-- Reduced-motion enabled.
-- Sound enabled.
-
-Important derived metrics:
-
-- Start-to-cart conversion.
-- Start-to-quote conversion.
-- Average configuration time.
-- Most selected body profiles.
-- Most selected colors and finishes.
-- Bulk conversion by quantity tier.
-- Drop-off by step.
-- Invalid combination frequency.
-- Logo upload failure rate.
-- Mobile performance impact on conversion.
-
-Analytics should include configuration metadata, but avoid storing sensitive uploaded artwork or personal text in raw event streams.
-
-## Error And Edge States
-
-Handle these gracefully:
-
-- 3D model fails to load.
-- Backend resolver times out.
-- Uploaded logo is too low resolution.
-- Selected quantity is below MOQ.
-- Selected option becomes unavailable.
-- Shopify variant is unpublished.
-- Factory SKU is temporarily unavailable.
-- Price cannot be resolved.
-- Customer requests impossible delivery date.
-- Browser does not support WebGL.
-
-Error tone should be calm and constructive.
-
-Examples:
-
-- `This finish is not available with the selected body. We switched to the closest compatible finish.`
-- `This logo needs a production proof before checkout.`
-- `This quantity requires a quote so we can confirm pricing and lead time.`
+### Operations console
 
-## Admin And Catalog Management
+Required launch screens: quote inbox, artwork processing failures, proof revisions, orders on hold, production-ready jobs, and catalog mapping errors. Each item shows owner, status, next action, and audit history.
 
-The merchant or internal team should be able to manage:
+Quote and proof links require scoped access. Artwork originals live in private storage with short-lived authorized retrieval. Tenant boundaries apply to files, configurations, and orders. Rate-limit uploads and costly rendering jobs.
 
-- Supported factories.
-- Approved pen models.
-- User-facing option names.
-- SKU mappings.
-- Compatibility rules.
-- Material and color availability.
-- Price rules.
-- Quantity tiers.
-- Lead times.
-- Decoration methods.
-- Decoration zones.
-- Shopify variant mappings.
-- Featured presets.
-- Default configuration.
+Set explicit draft/artwork retention and deletion policies before launch; separate abandoned uploads from production records that must be retained. Do not log raw personal text, source artwork, addresses, or signed download links. Merchant support access is audited.
 
-Admin tools should distinguish between:
+## 15. Analytics and experiments
 
-- Factory-facing IDs.
-- Shopify IDs.
-- User-facing labels.
-- 3D asset references.
+Measure commerce outcomes and experience quality separately. Event names and stable IDs should survive UI redesigns.
 
-## Presets
+| Event                         | When                         | Useful fields                              |
+| ----------------------------- | ---------------------------- | ------------------------------------------ |
+| configurator_opened           | Usable controls shown        | Entry source, intent, device class         |
+| scene_ready / scene_failed    | First valid frame or failure | Asset version, load duration, error class  |
+| chapter_viewed                | Explicit chapter navigation  | Chapter, prior chapter                     |
+| option_committed              | Accepted selection           | Facet ID, option ID, draft revision        |
+| conflict_presented / accepted | Proposal shown / accepted    | Reason code, affected facet IDs            |
+| resolution_completed          | Current response applied     | Latency, candidate count, readiness states |
+| artwork_processed             | Processing finishes          | Format, result, reason code; no content    |
+| quote_submitted               | Server confirms              | Request ID, quantity band, offering ID     |
+| cart_confirmed                | Cart reconciles              | Configuration revision, route              |
+| order_paid                    | Trusted commerce event       | Order reference, revenue/currency          |
+| production_rework             | Operations correction        | Reason category, offering version          |
 
-Presets help users start quickly without undermining customization.
+Deduplicate events using event IDs and distinguish client observations from server confirmations. Honor applicable merchant consent settings. Never send artwork, engraving strings, contact information, or share tokens to behavioral analytics.
 
-Examples:
+Dashboards: personal start-to-cart and paid conversion; team start-to-quote, quote-to-paid, and time-to-proof; gross/contribution margin; mobile rendering failure; conflict abandonment; price mismatch; production correction rate.
 
-- `Executive Black`
-- `Founder Blue`
-- `Conference Classic`
-- `Eco Matte`
-- `Studio White`
-- `Gift Edition`
-- `Fastest Production`
-- `Best for Logo`
+Start experiments with chapter count, default preset, or transition duration. Set a primary outcome and guardrails for revenue, performance, and rework before launch. Do not optimize for time spent rotating the pen.
 
-Selecting a preset should animate the pen into that configuration and keep the user inside the same customization flow.
+## 16. Required failure behavior
 
-## Review And Checkout
+| Situation                   | Customer experience                                | System behavior                                             |
+| --------------------------- | -------------------------------------------------- | ----------------------------------------------------------- |
+| Unsupported option change   | Explain required changes and offer cancel          | Keep committed state until acceptance                       |
+| Resolver unavailable        | Editing remains possible; price marked unconfirmed | Block purchase, retain draft, retry                         |
+| Stock or price changes      | Present new terms and ask acceptance               | Invalidate old cart intent                                  |
+| Artwork processing fails    | Show reason and replace-file action                | Preserve other selections                                   |
+| Logo exceeds zone           | Highlight bounds, offer resize or another zone     | Never silently crop production artwork                      |
+| Required date infeasible    | Show a later estimate or quote review              | Never promise rush automatically                            |
+| 3D fails                    | Accurate 2D product and flat proof views           | Same resolver and purchase rules                            |
+| Cart timeout                | Show checking status                               | Read cart before retrying                                   |
+| Cart price differs          | Show discrepancy and correction path               | No false add-to-cart success                                |
+| Proof edited after approval | New approval required                              | Hold production                                             |
+| Order cancellation arrives  | Updated status                                     | Reconcile before release; escalate if already in production |
+| Saved model retired         | Explain alternatives                               | Preserve old design for reference; no automatic replacement |
 
-The review step should show:
+## 17. Delivery plan and acceptance gates
 
-- Full rotating pen preview.
-- Static thumbnail fallback.
-- Selected body, finish, color, trim, ink.
-- Personalization or logo status.
-- Quantity.
-- Unit price and total price.
-- Lead time.
-- Proof requirement.
-- Return or edit controls.
-- Primary checkout or quote action.
+### Gate 0: Feasibility and source data
 
-Consumer primary action:
+Obtain one approved physical pen, factory specification, accurate artwork zone, price/MOQ rules, quantity-one fulfillment confirmation, and test-store access. Verify the proposed Shopify pricing/enforcement path before promising personalized checkout.
 
-- `Add to cart`
+Deliverables: source-of-truth offering fixture, commercial route decision, measured asset reference, and unresolved-decision register.
 
-Bulk primary actions:
+### Gate 1: Complete purchase slice
 
-- `Request proof`
-- `Request quote`
-- `Add bulk order to cart`, only when the configuration is fully priced and allowed.
+Build one pen with two real colors, accessible controls, server resolution, a 2D fallback, cart reconciliation, and order-to-production identity. Add elementary camera framing.
 
-## Implementation Phases
+Pass: a test purchase produces exactly the expected product, amount, and production ticket; cart tampering cannot silently create a wrongly priced custom order.
 
-### Phase 1: Prototype
+### Gate 2: Experience and constrained catalog
 
-Goal: Prove the hero pen experience.
+Add up to three approved body families, calibrated materials, chapter choreography, undo, conflict proposals, responsive controls, and performance instrumentation.
 
-Build:
+Pass: every selectable combination resolves to an approved offering; rapid edits never display stale resolution; all breakpoint and reduced-motion checks pass.
 
-- One GLB pen model with separable components.
-- Core camera choreography.
-- Body, finish, color, and trim steps.
-- Local mock compatibility graph.
-- Basic Shopify add-to-cart proof of concept.
+### Gate 3: Identity and bulk
 
-### Phase 2: Manufacturable Catalog
+Add text production rules, secure logo upload, quantity tiers, quotes, proof revision approval, and draft-order invoicing.
 
-Goal: Connect the illusion to real factory constraints.
+Pass: an approved logo revision follows through quote, payment, and production; changing it reliably invalidates approval. A single-unit buyer completes the shorter route without bulk administration.
 
-Build:
+### Gate 4: Launch readiness
 
-- Backend compatibility resolver.
-- SKU mappings.
-- Price and lead-time rules.
-- Shopify variant mapping.
-- Saved configuration snapshots.
-- Invalid state handling.
+Validate physical samples against approved renders/proofs, finalize support and retention policies, test failure recovery and webhook reconciliation, and instrument outcomes. Roll out to a limited audience with an immediate switch to 2D and quote-only routes if necessary.
 
-### Phase 3: Personalization And Bulk
+### Acceptance scenarios
 
-Goal: Support the two major buying modes.
+1. Switching from gold trim to a chrome-only surface proposes the trim change and supports one-step undo.
+2. A fixed-grip body never exposes independent grip customization.
+3. Ten rapid selections with out-of-order responses end on the last accepted selection and matching price.
+4. Quantity below MOQ or between pack increments cannot submit without an explicit supported change.
+5. Two different engravings of the same Shopify variant remain separate cart lines.
+6. Cart edits, omitted metadata, discounts, currency changes, and direct requests cannot bypass the supported commercial route.
+7. A duplicated quote request or webhook does not create duplicate production work.
+8. An approved logo edited by one millimeter requires the appropriate new proof approval.
+9. A cold mobile load fits the agreed budget; settled scenes stop continuous rendering.
+10. Keyboard and screen-reader users can complete personal and bulk paths; no canvas action is required.
+11. Lost WebGL context preserves the draft and offers a usable 2D path.
+12. A retired offering or expired price is explained on reopen before acceptance.
+13. A production release cannot occur with missing payment, required proof, supply confirmation, or order identity.
+14. Rendered and physically measured artwork dimensions agree within the factory-approved tolerance.
 
-Build:
+## 18. Decisions still requiring real inputs
 
-- Engraving preview.
-- Logo upload.
-- Decoration zones.
-- Quantity tiers.
-- Quote workflow.
-- Proof-required states.
+| Input                                                              | Owner                        | Why it blocks launch                                |
+| ------------------------------------------------------------------ | ---------------------------- | --------------------------------------------------- |
+| Actual approved SKUs and physical samples                          | Factory operations           | Determines real geometry and independent choices    |
+| Single-unit personalization fulfillment                            | Operations                   | Determines whether the personal promise is viable   |
+| Merchant store plan, theme, markets, and app distribution          | Commerce engineering         | Determines pricing and checkout enforcement options |
+| Print zones, fonts, tolerances, and color policies                 | Factory / artwork operations | Determines production accuracy                      |
+| Fees, margins, tiers, availability freshness, and quote expiry     | Merchant                     | Determines authoritative commercial terms           |
+| Proof ownership, response targets, payment and cancellation policy | Merchant operations          | Determines a workable bulk service                  |
+| Launch language, currency, shipping regions, and tax display       | Merchant                     | Determines localized totals and timing              |
+| Brand identity and visual assets                                   | Design                       | Determines the final visual system                  |
+| Privacy, retention, and support policy                             | Merchant                     | Determines handling of personal text and artwork    |
 
-### Phase 4: Production Polish
-
-Goal: Make the experience fast, accessible, and conversion-ready.
-
-Build:
-
-- Mobile optimization.
-- Reduced-motion mode.
-- Asset compression.
-- Analytics.
-- Error states.
-- Admin catalog workflows.
-- A/B testing support for steps, presets, and entry copy.
-
-## Definition Of Done
-
-The configurator is ready when:
-
-- A user can customize one persistent hero pen from start to review.
-- Every visible option maps to a valid backend configuration or gracefully resolves to one.
-- A consumer can add a personalized single pen to Shopify cart.
-- A bulk buyer can upload a logo, choose quantity, and submit a quote or checkout when eligible.
-- The 3D experience performs well on mobile and desktop.
-- Reduced-motion and accessible controls are supported.
-- Analytics capture the full configuration funnel.
-- Backend validation prevents impossible factory orders.
-- Designers can adjust choreography, lighting, and UI states without changing SKU logic.
-- Engineers can add new factory SKUs without redesigning the frontend experience.
-
-## North Star
-
-The customer should say:
-
-> I built this pen.
-
-The business should know:
-
-> They selected a valid, priced, manufacturable SKU.
-
-That tension is the product. The experience should feel cinematic, personal, and custom, while the system underneath remains disciplined, constrained, and production-safe.
+The defining experience is continuous authorship: the customer sees one pen become their own. The implementation earns that feeling by making every accepted choice accurate, recoverable, and deliverable.
